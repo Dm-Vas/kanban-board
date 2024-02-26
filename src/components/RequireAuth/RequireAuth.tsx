@@ -1,7 +1,7 @@
 import { useLocation, Navigate } from "react-router-dom";
 
-import { useAppSelector } from "./store";
-import { selectAuth } from "./features/auth/authSlice";
+import { selectAuth } from "src/features/auth/authSlice";
+import { useAppSelector } from "src/store";
 
 export const RequireAuth = ({ children }: { children: JSX.Element }) => {
   const auth = useAppSelector(selectAuth);

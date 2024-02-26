@@ -1,6 +1,7 @@
-import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
+import { Fragment } from "react";
+import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from "@mui/material";
 
-import { ActionMenuProps } from "./ActionMenu.types";
+import type { ActionMenuProps } from "./ActionMenu.types";
 
 export const ActionMenu = ({ menuItems, ...props }: ActionMenuProps) => {
   return (
@@ -15,13 +16,21 @@ export const ActionMenu = ({ menuItems, ...props }: ActionMenuProps) => {
       }}
       {...props}
     >
-      {menuItems.map(({ icon, label, onClick }) => (
-        <MenuItem key={label} onClick={onClick}>
-          <ListItemIcon>{icon}</ListItemIcon>
+      {menuItems.map(({ icon, label, onClick }, index) => {
+        const isLast = menuItems.length === index + 1;
 
-          <ListItemText>{label}</ListItemText>
-        </MenuItem>
-      ))}
+        return (
+          <Fragment key={label}>
+            <MenuItem onClick={onClick}>
+              <ListItemIcon>{icon}</ListItemIcon>
+
+              <ListItemText>{label}</ListItemText>
+            </MenuItem>
+
+            {!isLast && <Divider />}
+          </Fragment>
+        );
+      })}
     </Menu>
   );
 };

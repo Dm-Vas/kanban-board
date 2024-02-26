@@ -7,11 +7,11 @@ import {
   emailValidationShape,
   passwordValidationShape,
   confirmPasswordValidationShape,
-  boardNameValidationShape,
-  columnValidationShape,
   taskTitleValidationShape,
   taskDescriptionValidationShape,
   taskStatusValidationShape,
+  taskAssigneeValidationShape,
+  singleInputValidationShape,
 } from "./validationShapes";
 
 export const registerFormValidationSchema = z
@@ -33,20 +33,14 @@ export const loginFormValidationSchema = z.object({
   password: passwordValidationShape,
 });
 
-export const singleInputFormValidationSchema = z.object({
-  name: boardNameValidationShape,
-});
-
-export const createBoardFormValidationSchema = z.object({
-  name: boardNameValidationShape,
-  columns: columnValidationShape,
-});
+export const singleInputFormValidationSchema = (message: string) =>
+  z.object({
+    name: singleInputValidationShape(message),
+  });
 
 export const taskFormValidationSchema = z.object({
   title: taskTitleValidationShape,
+  column: taskStatusValidationShape,
+  assignee: taskAssigneeValidationShape,
   description: taskDescriptionValidationShape,
-});
-
-export const editTaskFormValidationSchema = taskFormValidationSchema.extend({
-  status: taskStatusValidationShape,
 });

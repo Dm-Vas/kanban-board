@@ -3,19 +3,21 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 
 import { useAppDispatch, useAppSelector } from "src/store";
 import { useDeleteBoardMutation, useDeleteColumnMutation, useDeleteTaskMutation } from "src/api/boardApi";
-import { closeConfirmationDialog } from "src/features/confirmationDialog/confirmationDialogSlice";
+import {
+  closeConfirmationDialog,
+  selectConfirmationDialog,
+} from "src/features/confirmationDialog/confirmationDialogSlice";
 import { AlertState, showAlert } from "src/features/alert/alertSlice";
 
-import { ConfirmationKey } from "./ConfirmationDialog.types";
+import type { ConfirmationKey } from "./ConfirmationDialog.types";
 
 export const ConfirmationDialog = () => {
-  const { isOpen, title, content, confirmationButtonLabel, confirmationKey, deleteItemId } = useAppSelector(
-    (state) => state.dialog
-  );
-  const { boardId, columnId, taskId } = useParams();
+  const { taskId } = useParams();
   const [deleteBoard] = useDeleteBoardMutation();
   const [deleteColumn] = useDeleteColumnMutation();
   const [deleteTask] = useDeleteTaskMutation();
+  const { isOpen, title, content, confirmationButtonLabel, confirmationKey, deleteItemId } =
+    useAppSelector(selectConfirmationDialog);
 
   const navigate = useNavigate();
 

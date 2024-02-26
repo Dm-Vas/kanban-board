@@ -1,34 +1,13 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+import type { AuthResponse, RegisterResponse } from "./models/auth";
 import { LoginFormValues, RegisterFormValues } from "src/models/forms";
-import { RootState } from "src/store";
-
-export type AuthResponse = {
-  succeeded: boolean;
-  message: string;
-  data: {
-    id: string;
-    userName: string;
-    email: string;
-    roles: string[];
-    isVerified: boolean;
-    jwToken: string;
-    refreshToken: string;
-  };
-};
-
-type RegisterResponse = {
-  succeeded: boolean;
-  message: string;
-  data: string;
-};
-
-export const apiUrl = import.meta.env.VITE_API_URL;
+import { API_URL } from "src/consts";
 
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: apiUrl,
+    baseUrl: API_URL,
   }),
   endpoints: (builder) => ({
     register: builder.mutation<RegisterResponse, RegisterFormValues>({

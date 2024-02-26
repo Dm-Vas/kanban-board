@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { ConfirmationKey } from "src//components/ConfirmationDialog/ConfirmationDialog.types";
+import type { ConfirmationKey } from "src//components/ConfirmationDialog/ConfirmationDialog.types";
+import type { RootState } from "src/store";
 
 type ConfirmationDialogSliceState = {
   isOpen: boolean;
@@ -38,5 +39,6 @@ const confirmationDialogSlice = createSlice({
   },
 });
 
+export const selectConfirmationDialog = (state: RootState) => state.dialog;
 export const { openConfirmationDialog, closeConfirmationDialog } = confirmationDialogSlice.actions;
 export default confirmationDialogSlice.reducer;

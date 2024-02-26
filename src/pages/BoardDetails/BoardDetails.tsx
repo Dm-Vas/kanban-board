@@ -1,33 +1,44 @@
-import { useState, MouseEvent } from "react";
+import type { MouseEvent } from "react";
+import { useState } from "react";
+import { Grid, Toolbar, Box, Paper, Typography, Link as MuiLink, IconButton, Button } from "@mui/material";
 import { Link, Outlet, useParams } from "react-router-dom";
 import { skipToken } from "@reduxjs/toolkit/query/react";
-import { Grid, Toolbar, Box, Paper, Typography, Link as MuiLink, IconButton, Button } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { grey } from "@mui/material/colors";
 import EditIcon from "@mui/icons-material/Edit";
-
-import { useAppDispatch } from "src/store";
-import { useMoveTaskMutation, useGetBoardDetailsQuery } from "src/api/boardApi";
-import { openConfirmationDialog } from "src/features/confirmationDialog/confirmationDialogSlice";
-import { openSingleInputForm } from "src/features/singleInputForm/singleInputFormSlice";
-import { openCreateTaskForm } from "src/features/taskForm/taskFormSlice";
-import { Error } from "src/components/Error/Error";
-import { Loading } from "src/components/Loading/Loading";
-import { TaskItem } from "src/components/TaskItem/TaskItem";
-import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
 import {
+  Draggable,
   DragDropContext,
   DroppableProvided,
-  Draggable,
   DraggableProvided,
+  OnDragEndResponder,
   DraggableStateSnapshot,
   DroppableStateSnapshot,
-  OnDragEndResponder,
 } from "react-beautiful-dnd";
-import { StrictModeDroppable } from "src/StrictModeDroppable";
+
+import { openConfirmationDialog } from "src/features/confirmationDialog/confirmationDialogSlice";
+import { StrictModeDroppable } from "src/components/StrictModeDroppable/StrictModeDroppable";
+import { openSingleInputForm } from "src/features/singleInputForm/singleInputFormSlice";
+import { useMoveTaskMutation, useGetBoardDetailsQuery } from "src/api/boardApi";
+import { openCreateTaskForm } from "src/features/taskForm/taskFormSlice";
+import { selectThemeMode } from "src/features/themeMode/themeModeSlice";
+import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
+import { TaskItem } from "src/components/TaskItem/TaskItem";
+import { useAppDispatch, useAppSelector } from "src/store";
+import { showAlert } from "src/features/alert/alertSlice";
+import { Loading } from "src/components/Loading/Loading";
+import { Error } from "src/components/Error/Error";
+
+const COLUMN_WIDTH = 250;
 
 export const BoardDetails = () => {
+  const params = useParams();
+  const dispatch = useAppDispatch();
+  const { mode } = useAppSelector(selectThemeMode);
+  const [moveTaskMutation] = useMoveTaskMutation();
+  const { data: boardDetails, isLoading, isError } = useGetBoardDetailsQuery(params.boardId ?? skipToken);
   const [actionMenu, setActionMenu] = useState<{
     anchorEl: HTMLElement | null;
     buttonId: string | null;
@@ -35,11 +46,6 @@ export const BoardDetails = () => {
     anchorEl: null,
     buttonId: null,
   });
-  const params = useParams();
-
-  const [moveTaskMutation, moveTaskMutationDetails] = useMoveTaskMutation();
-  const { data: boardDetails, isLoading, isError } = useGetBoardDetailsQuery(params.boardId ?? skipToken);
-  const dispatch = useAppDispatch();
 
   const handleOpenMoreMenu = (event: MouseEvent<HTMLButtonElement>) => {
     setActionMenu({
@@ -60,16 +66,25 @@ export const BoardDetails = () => {
 
     moveTaskMutation({
       taskId: result.draggableId,
-      columnTargetId: result.destination.droppableId,
       order: result.destination.index + 1,
-    });
+      columnTargetId: result.destination.droppableId,
+    })
+      .unwrap()
+      .catch(() => {
+        dispatch(
+          showAlert({
+            severity: "error",
+            message: "Something went wrong. Please try again.",
+          })
+        );
+      });
   };
 
   const handleAddNewTask =
-    ({ columnId, columnName }: { columnId: string; columnName: string }) =>
+    ({ columnId, boardId }: { columnId: string; boardId: string }) =>
     () => {
       handleCloseMoreMenu();
-      dispatch(openCreateTaskForm({ columnId, columnName }));
+      dispatch(openCreateTaskForm({ columnId, boardId }));
     };
 
   const handleAddColumn = () => {
@@ -96,12 +111,12 @@ export const BoardDetails = () => {
       );
     };
 
-  const handleDeleteColumn = (columnId: string) => () => {
+  const handleDeleteColumn = (columnId: string, columnName: string) => () => {
     handleCloseMoreMenu();
     dispatch(
       openConfirmationDialog({
         title: "Delete column?",
-        content: "Are you sure you want to delete this column and all related tasks? This action cannot be undone.",
+        content: `Are you sure you want to delete the "${columnName}" column and all tasks associated with it? This action cannot be undone.`,
         confirmationButtonLabel: "Delete",
         confirmationKey: "deleteColumn",
         deleteItemId: columnId,
@@ -145,7 +160,7 @@ export const BoardDetails = () => {
                           {...parentProvider.draggableProps}
                           key={column.id}
                           item
-                          minWidth="250px"
+                          width={COLUMN_WIDTH}
                           sx={{
                             display: "flex",
                             flexDirection: "column",
@@ -156,7 +171,7 @@ export const BoardDetails = () => {
                           elevation={1}
                         >
                           <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
-                            <Typography component="h3" align="center" gutterBottom>
+                            <Typography component="h3" align="center" noWrap>
                               {column.name} {numberOfTasks}
                             </Typography>
 
@@ -182,7 +197,7 @@ export const BoardDetails = () => {
                                   label: "Add task",
                                   onClick: handleAddNewTask({
                                     columnId: column.id,
-                                    columnName: column.name,
+                                    boardId: boardDetails.id,
                                   }),
                                 },
                                 {
@@ -196,7 +211,7 @@ export const BoardDetails = () => {
                                 {
                                   icon: <DeleteIcon />,
                                   label: "Delete column",
-                                  onClick: handleDeleteColumn(column.id),
+                                  onClick: handleDeleteColumn(column.id, column.name),
                                 },
                               ]}
                             />
@@ -204,18 +219,23 @@ export const BoardDetails = () => {
 
                           <StrictModeDroppable droppableId={column.id}>
                             {(dropProvided: DroppableProvided, dropSnapshot: DroppableStateSnapshot) => {
+                              const bgcolor = mode === "dark" ? grey[800] : grey.A100;
+
                               return (
                                 <Box
                                   ref={dropProvided.innerRef}
                                   {...dropProvided.droppableProps}
                                   component="ul"
                                   sx={{
+                                    height: "100%",
+                                    bgcolor: dropSnapshot.isDraggingOver ? bgcolor : undefined,
+                                    borderRadius: "4px",
                                     flex: 1,
                                     display: "flex",
                                     flexDirection: "column",
                                     gap: "16px",
                                     margin: 0,
-                                    padding: 0,
+                                    padding: 0.5,
                                     listStyleType: "none",
                                     overflow: "auto",
                                     scrollbarWidth: "none",
@@ -223,9 +243,6 @@ export const BoardDetails = () => {
                                     "&::-webkit-scrollbar": {
                                       display: "none",
                                     },
-                                  }}
-                                  style={{
-                                    height: "100%",
                                   }}
                                 >
                                   {tasks.map((task, index) => {
@@ -242,8 +259,9 @@ export const BoardDetails = () => {
                                               to={`/dashboard/boards/${params.boardId}/column/${column.id}/task/${task.id}`}
                                             >
                                               <TaskItem
-                                                isDragging={dragSnapshot.isDragging}
                                                 title={task.title}
+                                                userAttached={task.userAttached}
+                                                isDragging={dragSnapshot.isDragging}
                                                 dateOfCreation={task.dateOfCreation}
                                               />
                                             </MuiLink>
@@ -271,7 +289,7 @@ export const BoardDetails = () => {
                 variant="outlined"
                 onClick={handleAddColumn}
                 sx={{
-                  minWidth: "250px",
+                  minWidth: COLUMN_WIDTH,
                   display: "flex",
                   flexDirection: "column",
                   px: 1,

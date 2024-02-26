@@ -4,8 +4,8 @@ import { useAppDispatch, useAppSelector } from "src/store";
 import { hideAlert, selectAlert } from "src/features/alert/alertSlice";
 
 export const Alert = () => {
-  const { shown, severity, title, message } = useAppSelector(selectAlert);
   const dispatch = useAppDispatch();
+  const { shown, severity, title, message } = useAppSelector(selectAlert);
 
   const handleHideAlert = () => {
     dispatch(hideAlert());

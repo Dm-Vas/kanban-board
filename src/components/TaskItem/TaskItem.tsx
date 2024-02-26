@@ -1,40 +1,61 @@
-import { Avatar, AvatarGroup, Paper, Typography } from "@mui/material";
+import { Avatar, Box, Paper, Typography } from "@mui/material";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { grey } from "@mui/material/colors";
 
+import { selectThemeMode } from "src/features/themeMode/themeModeSlice";
 import { formatDateOfCreation } from "src/utils/formatDateOfCreation";
+import { getUserInitials } from "src/utils/getUserInitials";
+import { useGetUserDetailsQuery } from "src/api/userApi";
+import { useAppSelector } from "src/store";
 
-import { TaskItemProps } from "./TaskItem.types";
+import type { TaskItemProps } from "./TaskItem.types";
 
-export const TaskItem = ({ title, isDragging, dateOfCreation }: TaskItemProps) => {
+export const TaskItem = ({ title, userAttached, isDragging, dateOfCreation }: TaskItemProps) => {
+  const { mode } = useAppSelector(selectThemeMode);
+  const { data: user } = useGetUserDetailsQuery(userAttached || skipToken);
+
+  const bgcolor = mode === "dark" ? grey[900] : grey[50];
+
   return (
     <Paper
       component="li"
       elevation={2}
       sx={{
-        bgcolor: isDragging ? "red" : undefined,
         minHeight: "150px",
         display: "flex",
         flexDirection: "column",
         padding: "16px",
+        bgcolor: isDragging ? bgcolor : undefined,
       }}
     >
-      <Typography component="h3">{title}</Typography>
+      <Typography component="h3" noWrap>
+        {title}
+      </Typography>
 
-      <AvatarGroup
-        max={3}
+      <Box
         sx={{
-          "& .MuiAvatar-root": { width: 24, height: 24, fontSize: 12 },
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          marginTop: "auto",
         }}
       >
-        <Avatar alt="R S" src="" />
-        <Avatar alt="W A" src="" />
-        <Avatar alt="W S" src="" />
-        <Avatar alt="R N" src="" />
-        <Avatar alt="F E" src="" />
-      </AvatarGroup>
+        {user && userAttached && (
+          <Avatar
+            alt="User Avatar"
+            sx={{
+              width: 30,
+              height: 30,
+              fontSize: 12,
+              alignSelf: "flex-end",
+            }}
+          >
+            {getUserInitials(user)}
+          </Avatar>
+        )}
 
-      <Typography variant="caption" mt="auto">
-        Created: {formatDateOfCreation(dateOfCreation)}
-      </Typography>
+        <Typography variant="caption">Created: {formatDateOfCreation(dateOfCreation)}</Typography>
+      </Box>
     </Paper>
   );
 };

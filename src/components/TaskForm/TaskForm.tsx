@@ -1,45 +1,52 @@
-import { useForm } from "react-hook-form";
-import { Box, Toolbar, Typography, TextField, Button, Stack } from "@mui/material";
+import { useEffect } from "react";
 import { LoadingButton } from "@mui/lab";
-import { DevTool } from "@hookform/devtools";
+import { Controller } from "react-hook-form";
+import { Typography, TextField, Button, Stack } from "@mui/material";
 
+import { closeTaskForm, selectTaskForm } from "src/features/taskForm/taskFormSlice";
+import { SelectAssignee } from "src/components/SelectAssignee/SelectAssignee";
+import { SelectColumn } from "src/components/SelectColumn/SelectColumn";
+import { useGetTaskStatuses } from "src/hooks/useGetTaskStatuses";
 import { useAppDispatch, useAppSelector } from "src/store";
 import { useCreateTaskMutation } from "src/api/boardApi";
-import { closeTaskForm } from "src/features/taskForm/taskFormSlice";
 import { showAlert } from "src/features/alert/alertSlice";
-
+import { useGetAllUsersQuery } from "src/api/userApi";
+import { useTaskForm } from "src/hooks/useTaskForm";
 import { Modal } from "src/components/Modal/Modal";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { taskFormValidationSchema } from "src/utils/validationSchemas";
-import { TaskFormValues } from "src/models/forms";
 
 export const TaskForm = () => {
-  const { isOpen, columnId, columnName } = useAppSelector((state) => state.taskForm);
+  const { data: users } = useGetAllUsersQuery();
+  const { isOpen, columnId, boardId } = useAppSelector(selectTaskForm);
   const [createTaskMutation, createTaskMutationDetails] = useCreateTaskMutation();
+  const statuses = useGetTaskStatuses(boardId);
   const dispatch = useAppDispatch();
   const {
-    handleSubmit,
-    reset,
     control,
+    formState: { errors },
+    handleSubmit,
     register,
-    formState: { isSubmitting, errors },
-  } = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormValidationSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-    },
-  });
+    reset,
+    watch,
+  } = useTaskForm();
+
+  useEffect(() => {
+    if (columnId) {
+      reset({
+        column: columnId,
+      });
+    }
+  }, [columnId, reset]);
 
   const handleSubmitForm = handleSubmit((data) => {
-    if (!columnId || !columnName) return;
+    if (!columnId) return;
 
     createTaskMutation({
       task: {
-        columnId,
+        status: "",
         title: data.title,
+        columnId: data.column,
         description: data.description,
-        status: columnName,
+        userAttached: data.assignee,
       },
     })
       .unwrap()
@@ -68,52 +75,69 @@ export const TaskForm = () => {
   };
 
   return (
-    <>
-      <Modal open={isOpen} onClose={handleCloseTaskForm}>
-        <Box component="form" onSubmit={handleSubmitForm}>
-          <Typography variant="h5" marginBottom={5}>
-            Create Task
-          </Typography>
+    <Modal open={isOpen} onClose={handleCloseTaskForm}>
+      <Stack component="form" onSubmit={handleSubmitForm} direction="column" spacing={4}>
+        <Typography align="center" variant="h5" marginBottom={5}>
+          Add Task
+        </Typography>
 
-          <Stack gap={5}>
-            <Stack gap={3}>
-              <TextField
-                label="Title"
-                variant="standard"
-                error={!!errors.title}
-                helperText={errors.title?.message}
-                {...register("title")}
-              />
+        <TextField
+          {...register("title")}
+          label="Title"
+          variant="standard"
+          error={!!errors.title}
+          helperText={errors.title?.message}
+          InputLabelProps={{
+            shrink: true,
+          }}
+        />
 
-              <TextField
-                label="Description"
-                variant="standard"
-                error={!!errors.description}
-                helperText={errors.description?.message}
-                {...register("description")}
-              />
-            </Stack>
+        <TextField
+          {...register("description")}
+          multiline
+          minRows={1}
+          maxRows={5}
+          variant="standard"
+          label="Description"
+          error={!!errors.description}
+          helperText={errors.description?.message}
+          InputLabelProps={{
+            shrink: true,
+          }}
+        />
 
-            <Stack gap={2}>
-              <LoadingButton
-                type="submit"
-                color="primary"
-                variant="contained"
-                loading={isSubmitting || createTaskMutationDetails.isLoading}
-                loadingIndicator="Creating task..."
-              >
-                Create Task
-              </LoadingButton>
+        <Controller
+          name="column"
+          control={control}
+          render={({ field }) => {
+            return <SelectColumn options={statuses} {...field} />;
+          }}
+        />
 
-              <Button type="button" color="primary" variant="outlined" onClick={handleCloseTaskForm}>
-                Cancel
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
-      </Modal>
+        <Controller
+          name="assignee"
+          control={control}
+          render={({ field }) => {
+            return <SelectAssignee options={users} isAnyOptionsSelected={!!watch("assignee")} {...field} />;
+          }}
+        />
 
-      <DevTool control={control} />
-    </>
+        <Stack gap={2}>
+          <LoadingButton
+            type="submit"
+            color="primary"
+            variant="contained"
+            loading={createTaskMutationDetails.isLoading}
+            loadingIndicator="Creating task..."
+          >
+            Add Task
+          </LoadingButton>
+
+          <Button type="button" color="primary" variant="outlined" onClick={handleCloseTaskForm}>
+            Cancel
+          </Button>
+        </Stack>
+      </Stack>
+    </Modal>
   );
 };

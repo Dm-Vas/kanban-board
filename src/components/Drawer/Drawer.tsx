@@ -16,23 +16,29 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 import { ThemeToggler } from "src/components/ThemeToggler/ThemeToggler";
 
-import { DrawerProps } from "./Drawer.types";
+import type { DrawerProps } from "./Drawer.types";
 
-export const Drawer = ({ drawerWidth }: DrawerProps) => {
-  const { pathname } = useLocation();
+export const Drawer = ({ isOpen, drawerWidth, onCloseDrawer }: DrawerProps) => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const drawer = (
     <>
       <Toolbar sx={{ display: "flex", justifyContent: "center" }}>
-        <Typography component="h3">KANBAN</Typography>
+        <Typography component="h2">KANBAN</Typography>
       </Toolbar>
 
       <Divider />
 
       <List sx={{ height: "100%", display: "flex", flexDirection: "column" }} disablePadding>
         <ListItem disablePadding>
-          <ListItemButton selected={pathname === "/dashboard/boards"} onClick={() => navigate(`/dashboard/boards`)}>
+          <ListItemButton
+            selected={pathname === "/dashboard/boards"}
+            onClick={() => {
+              navigate(`/dashboard/boards`);
+              onCloseDrawer();
+            }}
+          >
             <ListItemIcon>
               <DashboardIcon />
             </ListItemIcon>
@@ -42,7 +48,13 @@ export const Drawer = ({ drawerWidth }: DrawerProps) => {
         </ListItem>
 
         <ListItem disablePadding>
-          <ListItemButton selected={pathname === "/dashboard/settings"} onClick={() => navigate(`/dashboard/settings`)}>
+          <ListItemButton
+            selected={pathname === "/dashboard/settings"}
+            onClick={() => {
+              navigate(`/dashboard/settings`);
+              onCloseDrawer();
+            }}
+          >
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
@@ -74,19 +86,19 @@ export const Drawer = ({ drawerWidth }: DrawerProps) => {
       aria-label="drawer"
     >
       <MuiDrawer
-        // container={container}
+        open={isOpen}
         anchor="left"
         variant="temporary"
         ModalProps={{
           keepMounted: true,
         }}
         sx={{
-          display: {
-            xs: "block",
-            sm: "none",
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: drawerWidth,
           },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
         }}
+        onClose={onCloseDrawer}
       >
         {drawer}
       </MuiDrawer>
@@ -98,7 +110,10 @@ export const Drawer = ({ drawerWidth }: DrawerProps) => {
             xs: "none",
             sm: "block",
           },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: drawerWidth,
+          },
         }}
         open
       >

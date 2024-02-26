@@ -1,16 +1,12 @@
-import { useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, Paper, TextField, Toolbar, Typography, Link as MuiLink, Stack } from "@mui/material";
+import { Box, Paper, TextField, Toolbar, Typography, Link as MuiLink, Stack } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
-import { DevTool } from "@hookform/devtools";
 
-import { useAppDispatch, useAppSelector } from "src/store";
-import { selectAuth, login } from "src/features/auth/authSlice";
-import { registerFormValidationSchema } from "src/utils/validationSchemas";
-import type { RegisterFormValues } from "src/models/forms";
 import { useRegisterMutation } from "src/api/authApi";
+import { selectAuth } from "src/features/auth/authSlice";
 import { showAlert } from "src/features/alert/alertSlice";
+import { useAppDispatch, useAppSelector } from "src/store";
+import { useRegisterForm } from "src/hooks/useRegisterForm";
 import { ThemeToggler } from "src/components/ThemeToggler/ThemeToggler";
 
 export const Register = () => {
@@ -18,20 +14,11 @@ export const Register = () => {
   const dispatch = useAppDispatch();
   const { jwt } = useAppSelector(selectAuth);
   const [registerMutation, registerMutationDetails] = useRegisterMutation();
-  const { handleSubmit, register, formState, control } = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerFormValidationSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-    mode: "onSubmit",
-    reValidateMode: "onSubmit",
-  });
-
-  const { errors: formErrors, isSubmitting: isFormSubmitting } = formState;
+  const {
+    handleSubmit,
+    register,
+    formState: { errors },
+  } = useRegisterForm();
 
   const handleRegister = handleSubmit((data) => {
     registerMutation(data)
@@ -58,99 +45,110 @@ export const Register = () => {
   if (jwt) return <Navigate to="/dashboard/boards" />;
 
   return (
-    <>
-      <Box
-        component="main"
+    <Box
+      component="main"
+      sx={{
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Paper
         sx={{
-          width: "100vw",
-          height: "100vh",
+          width: "100%",
+          maxWidth: "450px",
+          height: "fit-content",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
+          gap: 1,
+          p: 3,
         }}
       >
-        <Paper component={Stack} gap={3} sx={{ width: "90%", maxWidth: "400px", p: 3 }}>
-          <Toolbar sx={{ display: "flex", justifyContent: "center" }}>
-            <Typography component="h1" variant="h5">
-              Register
-            </Typography>
-          </Toolbar>
+        <Toolbar sx={{ display: "flex", justifyContent: "center" }}>
+          <Typography component="h1" variant="h5">
+            Register
+          </Typography>
+        </Toolbar>
 
-          <Stack component="form" direction="column" onSubmit={handleRegister} noValidate>
-            <Stack direction="column" spacing={2} mb={3}>
+        <Stack component="form" noValidate onSubmit={handleRegister} width="100%" direction="column">
+          <Stack direction="column" spacing={2} mb={3}>
+            <Stack direction="row" spacing={2}>
               <TextField
+                {...register("firstName")}
                 label="First Name"
                 type="text"
-                error={!!formErrors.firstName}
-                helperText={formErrors.firstName?.message}
-                {...register("firstName")}
+                fullWidth
+                error={!!errors.firstName}
+                helperText={errors.firstName?.message}
               />
 
               <TextField
+                {...register("lastName")}
                 label="Last Name"
                 type="text"
-                error={!!formErrors.lastName}
-                helperText={formErrors.lastName?.message}
-                {...register("lastName")}
-              />
-
-              <TextField
-                label="Username"
-                type="text"
-                error={!!formErrors.userName}
-                helperText={formErrors.userName?.message}
-                {...register("userName")}
-              />
-
-              <TextField
-                label="Email"
-                type="email"
-                error={!!formErrors.email}
-                helperText={formErrors.email?.message}
-                {...register("email")}
-              />
-
-              <TextField
-                label="Password"
-                type="password"
-                error={!!formErrors.password}
-                helperText={formErrors.password?.message}
-                {...register("password")}
-              />
-
-              <TextField
-                label="Confirm Password"
-                type="password"
-                error={!!formErrors.confirmPassword}
-                helperText={formErrors.confirmPassword?.message}
-                {...register("confirmPassword")}
+                fullWidth
+                error={!!errors.lastName}
+                helperText={errors.lastName?.message}
               />
             </Stack>
 
-            <Stack direction="column" spacing={2}>
-              <LoadingButton
-                type="submit"
-                loading={isFormSubmitting || registerMutationDetails.isLoading}
-                loadingIndicator="Registering..."
-                variant="contained"
-              >
-                Register
-              </LoadingButton>
+            <TextField
+              {...register("userName")}
+              label="Username"
+              type="text"
+              error={!!errors.userName}
+              helperText={errors.userName?.message}
+            />
 
-              <Typography variant="caption" align="center">
-                Already have an account?{" "}
-                <MuiLink component={Link} to="/login" underline="hover">
-                  Log in
-                </MuiLink>
-              </Typography>
-            </Stack>
+            <TextField
+              {...register("email")}
+              label="Email"
+              type="email"
+              error={!!errors.email}
+              helperText={errors.email?.message}
+            />
+
+            <TextField
+              {...register("password")}
+              label="Password"
+              type="password"
+              error={!!errors.password}
+              helperText={errors.password?.message}
+            />
+
+            <TextField
+              {...register("confirmPassword")}
+              label="Confirm Password"
+              type="password"
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+            />
           </Stack>
 
-          <ThemeToggler />
-        </Paper>
-      </Box>
+          <Stack direction="column" spacing={2}>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loadingIndicator="Registering..."
+              loading={registerMutationDetails.isLoading}
+            >
+              Register
+            </LoadingButton>
 
-      <DevTool control={control} />
-    </>
+            <Typography variant="caption" align="center">
+              Already have an account?{" "}
+              <MuiLink component={Link} to="/login" underline="hover">
+                Log in
+              </MuiLink>
+            </Typography>
+          </Stack>
+        </Stack>
+
+        <ThemeToggler />
+      </Paper>
+    </Box>
   );
 };

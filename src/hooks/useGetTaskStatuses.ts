@@ -1,7 +1,8 @@
 import { skipToken } from "@reduxjs/toolkit/dist/query";
+
 import { useGetBoardDetailsQuery } from "src/api/boardApi";
 
-export const useGetTaskStatuses = (boardId: string | undefined) => {
+export const useGetTaskStatuses = (boardId: string | undefined | null) => {
   const { data: boardDetails } = useGetBoardDetailsQuery(boardId ?? skipToken);
 
   return boardDetails?.columns.map((column) => ({

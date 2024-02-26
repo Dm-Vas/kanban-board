@@ -1,82 +1,57 @@
-import { MouseEvent, useId, useState, useLayoutEffect } from "react";
+import { IconButton, Paper, Button, Stack, TextField } from "@mui/material";
+import { MouseEvent, useId, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Controller, useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { skipToken } from "@reduxjs/toolkit/dist/query";
-import { DevTool } from "@hookform/devtools";
-import {
-  Modal,
-  IconButton,
-  Paper,
-  Typography,
-  List,
-  ListItem,
-  ListItemButton,
-  Checkbox,
-  ListSubheader,
-  Button,
-  Stack,
-  FormControl,
-  Select,
-  MenuItem,
-  TextField,
-} from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-import { useAppDispatch } from "src/store";
-import { useEditTaskMutation, useGetBoardDetailsQuery } from "src/api/boardApi";
-import { openConfirmationDialog } from "src/features/confirmationDialog/confirmationDialogSlice";
-
-import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
-import { showAlert } from "src/features/alert/alertSlice";
-import { useGetTaskStatuses } from "src/hooks/useGetTaskStatuses";
 import { LoadingButton } from "@mui/lab";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { EditTaskFormValues } from "src/models/forms";
-import { editTaskFormValidationSchema } from "src/utils/validationSchemas";
+
+import { openConfirmationDialog } from "src/features/confirmationDialog/confirmationDialogSlice";
+import { useEditTaskMutation, useGetBoardDetailsQuery } from "src/api/boardApi";
+import { SelectAssignee } from "src/components/SelectAssignee/SelectAssignee";
+import { SelectColumn } from "src/components/SelectColumn/SelectColumn";
+import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
+import { useGetTaskStatuses } from "src/hooks/useGetTaskStatuses";
+import { showAlert } from "src/features/alert/alertSlice";
+import { useGetAllUsersQuery } from "src/api/userApi";
+import { useTaskForm } from "src/hooks/useTaskForm";
+import { Modal } from "src/components/Modal/Modal";
+import { useAppDispatch } from "src/store";
 
 export const TaskDetails = () => {
-  const titleId = useId();
-  const statusId = useId();
   const moreMenuId = useId();
-  const descriptionId = useId();
+  const navigate = useNavigate();
   const moreMenuButtonId = useId();
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const { data: users } = useGetAllUsersQuery();
   const [isEdited, setIsEdited] = useState(false);
-  const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState<null | HTMLElement>(null);
   const { boardId, columnId, taskId } = useParams();
   const { data: board } = useGetBoardDetailsQuery(boardId ?? skipToken);
   const [editTaskMutation, editTaskMutationDetails] = useEditTaskMutation();
+  const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-  const columnName = board?.columns.find((column) => column.id === columnId)?.name;
   const taskDetails = board?.columns.find((column) => column.id === columnId)?.tasks.find((task) => task.id === taskId);
 
   const statuses = useGetTaskStatuses(board?.id);
   const {
     control,
-    formState: { isSubmitting, errors },
+    formState: { isDirty, errors },
     handleSubmit,
     register,
+    watch,
     reset,
-  } = useForm<EditTaskFormValues>({
-    resolver: zodResolver(editTaskFormValidationSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      status: "",
-    },
-    mode: "onSubmit",
-  });
+  } = useTaskForm();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     reset({
+      column: columnId,
       title: taskDetails?.title,
       description: taskDetails?.description,
-      status: columnId,
+      assignee: taskDetails?.userAttached || "",
     });
-  }, [reset, taskDetails]);
+  }, [columnId, taskDetails?.description, taskDetails?.title, taskDetails?.userAttached, reset]);
 
   const moreMenuOpen = Boolean(moreMenuAnchorEl);
 
@@ -97,16 +72,17 @@ export const TaskDetails = () => {
     if (!taskId || !columnId) return;
 
     editTaskMutation({
-      id: taskId,
-      columnId: data.status,
-      title: data.title,
-      description: data.description,
       status: "",
+      id: taskId,
+      title: data.title,
+      columnId: data.column,
+      userAttached: data.assignee,
+      description: data.description,
     })
       .unwrap()
       .then(() => {
         setIsEdited(false);
-        handleCloseTaskDetails();
+        navigate(-1);
         dispatch(
           showAlert({
             severity: "success",
@@ -133,7 +109,7 @@ export const TaskDetails = () => {
     dispatch(
       openConfirmationDialog({
         title: "Delete task?",
-        content: "Are you sure you want to delete this task? This action cannot be undone.",
+        content: `Are you sure you want to delete the "${taskDetails?.title}" task? This action cannot be undone.`,
         confirmationButtonLabel: "Delete",
         confirmationKey: "deleteTask",
         deleteItemId: taskId,
@@ -141,149 +117,127 @@ export const TaskDetails = () => {
     );
   };
 
-  const handleCloseTaskDetails = () => {
-    navigate(-1);
-  };
-
   return (
-    <>
-      <Modal open onClose={handleCloseTaskDetails}>
-        <Paper
+    <Modal open onClose={() => navigate(-1)}>
+      <Paper
+        sx={{
+          width: "100%",
+          maxWidth: "500px",
+          display: "flex",
+          flexDirection: "column",
+          padding: "60px 30px 30px",
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          outline: "none",
+        }}
+      >
+        <IconButton
+          id={moreMenuButtonId}
+          aria-controls={moreMenuOpen ? moreMenuId : undefined}
+          aria-haspopup="true"
+          aria-expanded={moreMenuOpen ? "true" : undefined}
+          onClick={handleOpenMoreMenu}
           sx={{
-            width: "500px",
-            display: "flex",
-            flexDirection: "column",
-            padding: "60px 30px 30px",
             position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
+            top: "10px",
+            right: "10px",
           }}
         >
-          <IconButton
-            id={moreMenuButtonId}
-            aria-controls={moreMenuOpen ? moreMenuId : undefined}
-            aria-haspopup="true"
-            aria-expanded={moreMenuOpen ? "true" : undefined}
-            onClick={handleOpenMoreMenu}
-            sx={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-            }}
-          >
-            <MoreVertIcon />
-          </IconButton>
+          <MoreVertIcon />
+        </IconButton>
 
-          <ActionMenu
-            id={moreMenuId}
-            aria-labelledby={moreMenuButtonId}
-            anchorEl={moreMenuAnchorEl}
-            open={moreMenuOpen}
-            onClose={handleCloseMoreMenu}
-            menuItems={[
-              ...(!isEdited
-                ? [
-                    {
-                      icon: <EditIcon />,
-                      label: "Edit Task",
-                      onClick: handleEditTask,
-                    },
-                  ]
-                : []),
-              {
-                icon: <DeleteIcon />,
-                label: "Delete Task",
-                onClick: handleDeleteTask,
-              },
-            ]}
+        <ActionMenu
+          id={moreMenuId}
+          aria-labelledby={moreMenuButtonId}
+          anchorEl={moreMenuAnchorEl}
+          open={moreMenuOpen}
+          onClose={handleCloseMoreMenu}
+          menuItems={[
+            ...(!isEdited
+              ? [
+                  {
+                    icon: <EditIcon />,
+                    label: "Edit Task",
+                    onClick: handleEditTask,
+                  },
+                ]
+              : []),
+            {
+              icon: <DeleteIcon />,
+              label: "Delete Task",
+              onClick: handleDeleteTask,
+            },
+          ]}
+        />
+
+        <Stack component={isEdited ? "form" : "div"} direction="column" spacing={4} onSubmit={handleSaveChanges}>
+          <TextField
+            {...register("title")}
+            label="Title"
+            variant="standard"
+            disabled={!isEdited}
+            error={!!errors.title}
+            helperText={errors.title?.message}
+            InputLabelProps={{
+              shrink: true,
+            }}
           />
 
-          <Stack component={isEdited ? "form" : "div"} direction="column" spacing={2} onSubmit={handleSaveChanges}>
-            {isEdited ? (
-              <TextField
-                id={titleId}
-                label="Title"
-                variant="standard"
-                error={!!errors.title}
-                helperText={errors.title?.message}
-                {...register("title")}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-            ) : (
-              <Stack>
-                <Typography component="p" variant="h4">
-                  Title: {taskDetails?.title}
-                </Typography>
-              </Stack>
-            )}
+          <TextField
+            {...register("description")}
+            multiline
+            minRows={1}
+            maxRows={5}
+            variant="standard"
+            label="Description"
+            disabled={!isEdited}
+            error={!!errors.description}
+            helperText={errors.description?.message}
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
 
-            {isEdited ? (
-              <TextField
-                id={descriptionId}
-                label="Description"
-                variant="standard"
-                error={!!errors.title}
-                helperText={errors.title?.message}
-                {...register("description")}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-            ) : (
-              <Typography component="p" variant="h5">
-                Description: {taskDetails?.description}
-              </Typography>
-            )}
+          <Controller
+            name="column"
+            control={control}
+            disabled={!isEdited}
+            render={({ field }) => {
+              return <SelectColumn options={statuses} {...field} />;
+            }}
+          />
 
-            {isEdited ? (
-              <Controller
-                name="status"
-                control={control}
-                render={({ field: { value, onChange } }) => {
-                  return (
-                    <Select id={statusId} value={value} onChange={onChange}>
-                      {statuses?.map(({ columnId, status }) => {
-                        return (
-                          <MenuItem key={columnId} value={columnId}>
-                            {status}
-                          </MenuItem>
-                        );
-                      })}
-                    </Select>
-                  );
-                }}
-              />
-            ) : (
-              <Typography component="p" variant="h6">
-                Status: {columnName}
-              </Typography>
-            )}
+          <Controller
+            name="assignee"
+            control={control}
+            disabled={!isEdited}
+            render={({ field }) => {
+              return <SelectAssignee options={users} isAnyOptionsSelected={!!watch("assignee")} {...field} />;
+            }}
+          />
 
-            {isEdited && (
-              <>
-                <LoadingButton
-                  type="submit"
-                  color="primary"
-                  variant="contained"
-                  loadingIndicator="Saving changes..."
-                  loading={isSubmitting || editTaskMutationDetails.isLoading}
-                >
-                  Save changes
-                </LoadingButton>
+          {isEdited && (
+            <Stack direction="column" spacing={2}>
+              <LoadingButton
+                type="submit"
+                color="primary"
+                variant="contained"
+                disabled={!isDirty}
+                loadingIndicator="Saving changes..."
+                loading={editTaskMutationDetails.isLoading}
+              >
+                Save changes
+              </LoadingButton>
 
-                <Button color="primary" variant="outlined" onClick={handleCancelChanges}>
-                  Cancel
-                </Button>
-              </>
-            )}
-          </Stack>
-        </Paper>
-      </Modal>
-
-      <DevTool control={control} />
-    </>
+              <Button type="button" color="primary" variant="outlined" onClick={handleCancelChanges}>
+                Cancel
+              </Button>
+            </Stack>
+          )}
+        </Stack>
+      </Paper>
+    </Modal>
   );
 };

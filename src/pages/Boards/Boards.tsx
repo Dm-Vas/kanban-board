@@ -1,20 +1,23 @@
-import { Box, Button, Grid, Typography } from "@mui/material";
+import { Button, Grid } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 
-import { useGetAllBoardsQuery } from "src/api/boardApi";
-
-import { useAppDispatch } from "src/store";
+import { openSingleInputForm } from "src/features/singleInputForm/singleInputFormSlice";
 import { BoardItem } from "src/components/BoardItem/BoardItem";
 import { Loading } from "src/components/Loading/Loading";
+import { useGetAllBoardsQuery } from "src/api/boardApi";
 import { Error } from "src/components/Error/Error";
-import { openCreateNewBoardForm } from "src/features/boardForm/boardFormSlice";
+import { useAppDispatch } from "src/store";
 
 export const Boards = () => {
-  const { data: boards, isLoading, isError } = useGetAllBoardsQuery();
   const dispatch = useAppDispatch();
+  const { data: boards, isLoading, isError } = useGetAllBoardsQuery();
 
   const handleOpenCreateBoardForm = () => {
-    dispatch(openCreateNewBoardForm());
+    dispatch(
+      openSingleInputForm({
+        type: "create-board",
+      })
+    );
   };
 
   if (isLoading) return <Loading />;

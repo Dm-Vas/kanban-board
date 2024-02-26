@@ -1,57 +1,14 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { RootState } from "src/store";
+
+import type { Board, Column, Task } from "./models/board";
+import type { RootState } from "src/store";
+import { API_URL } from "src/consts";
 import { apiTags } from "./apiTags";
-
-export type Board = {
-  id: string;
-  order: number;
-  name: string;
-  columns: Column[];
-  dateOfCreation: string;
-  dateOfModification: string;
-  totalNumberOfTasks?: number;
-};
-
-type Column = {
-  id: string;
-  name: string;
-  order: number;
-  tasks: Task[];
-  dateOfCreation: string;
-  dateOfModification: string;
-};
-
-export type Task = {
-  userAttached: string;
-  title: string;
-  description: string;
-  status: string;
-  id: string;
-  columnId: string;
-  order: number;
-  dateOfCreation: string;
-  dateOfModification: string;
-  parents: {
-    id: string;
-    isCompleted: boolean;
-    status: string;
-    title: string;
-  }[];
-};
-
-export type Subtask = {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-  status: string;
-};
-
-export const apiUrl = import.meta.env.VITE_API_URL;
 
 export const boardApi = createApi({
   reducerPath: "boardApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: apiUrl,
+    baseUrl: API_URL,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).auth.jwt;
 
@@ -166,7 +123,6 @@ export const boardApi = createApi({
       },
       invalidatesTags: [apiTags.boardDetails],
     }),
-
     moveTask: builder.mutation<void, { taskId: string; columnTargetId: string; order: number }>({
       query({ taskId, ...payload }) {
         return {
@@ -177,7 +133,6 @@ export const boardApi = createApi({
       },
       invalidatesTags: [apiTags.boardDetails],
     }),
-
     deleteTask: builder.mutation<void, { taskId: Task["id"] }>({
       query({ taskId }) {
         return {
@@ -196,16 +151,15 @@ export const {
   useGetBoardDetailsQuery,
 
   useCreateBoardMutation,
-  useEditBoardMutation,
   useDeleteBoardMutation,
+  useEditBoardMutation,
 
   useCreateColumnMutation,
-  useEditColumnMutation,
   useDeleteColumnMutation,
+  useEditColumnMutation,
 
+  useDeleteTaskMutation,
   useCreateTaskMutation,
   useEditTaskMutation,
   useMoveTaskMutation,
-
-  useDeleteTaskMutation,
 } = boardApi;

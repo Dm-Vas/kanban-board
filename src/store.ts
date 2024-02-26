@@ -4,19 +4,19 @@ import { combineReducers, configureStore, Middleware, PreloadedState } from "@re
 import { setupListeners } from "@reduxjs/toolkit/query/react";
 
 import { authApi } from "./api/authApi";
+import { userApi } from "./api/userApi";
 import { boardApi } from "./api/boardApi";
-import authReducer, { login, logout } from "./features/auth/authSlice";
 import dialogReducer from "./features/confirmationDialog/confirmationDialogSlice";
-import alertReducer from "./features/alert/alertSlice";
-import boardReducer from "./features/boardForm/boardFormSlice";
-import taskReducer from "./features/taskForm/taskFormSlice";
 import singleInputReducer from "./features/singleInputForm/singleInputFormSlice";
 import themeModeSliceReducer from "./features/themeMode/themeModeSlice";
+import authReducer, { login, logout } from "./features/auth/authSlice";
+import taskReducer from "./features/taskForm/taskFormSlice";
+import alertReducer from "./features/alert/alertSlice";
 
 const userKey = "user";
 const jwtKey = "jwt";
 
-const authMiddleware: Middleware<{}, RootState> = () => (next) => (action) => {
+const authMiddleware: Middleware<object, RootState> = () => (next) => (action) => {
   const cookies = new Cookies();
 
   if (login.match(action)) {
@@ -29,7 +29,6 @@ const authMiddleware: Middleware<{}, RootState> = () => (next) => (action) => {
         userName: action.payload.userName,
         email: action.payload.email,
         roles: action.payload.roles,
-        // jwToken: action.payload.jwt,
       })
     );
   } else if (logout.match(action)) {
@@ -43,10 +42,10 @@ const authMiddleware: Middleware<{}, RootState> = () => (next) => (action) => {
 const rootReducer = combineReducers({
   [authApi.reducerPath]: authApi.reducer,
   [boardApi.reducerPath]: boardApi.reducer,
+  [userApi.reducerPath]: userApi.reducer,
   auth: authReducer,
   dialog: dialogReducer,
   alert: alertReducer,
-  boardForm: boardReducer,
   taskForm: taskReducer,
   singleInputForm: singleInputReducer,
   themeMode: themeModeSliceReducer,
@@ -56,7 +55,7 @@ export const setupStore = (preloadedState?: PreloadedState<RootState>) => {
   return configureStore({
     reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat([authMiddleware, authApi.middleware, boardApi.middleware]),
+      getDefaultMiddleware().concat([authMiddleware, authApi.middleware, boardApi.middleware, userApi.middleware]),
     preloadedState,
   });
 };

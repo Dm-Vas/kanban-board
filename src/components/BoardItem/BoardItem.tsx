@@ -1,4 +1,5 @@
-import { useState, useId, MouseEvent } from "react";
+import type { MouseEvent } from "react";
+import { useState, useId } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Paper, Box, IconButton, Link, Typography, Stack } from "@mui/material";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -6,12 +7,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 
 import { useAppDispatch } from "src/store";
+import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
 import { formatDateOfCreation } from "src/utils/formatDateOfCreation";
 import { openSingleInputForm } from "src/features/singleInputForm/singleInputFormSlice";
 import { openConfirmationDialog } from "src/features/confirmationDialog/confirmationDialogSlice";
-import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
 
-import { BoardItemProps } from "./BoardItem.types";
+import type { BoardItemProps } from "./BoardItem.types";
 
 export const BoardItem = ({ id, name, totalNumberOfTasks, dateOfCreation }: BoardItemProps) => {
   const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -44,8 +45,7 @@ export const BoardItem = ({ id, name, totalNumberOfTasks, dateOfCreation }: Boar
     dispatch(
       openConfirmationDialog({
         title: "Delete board?",
-        content:
-          "Are you sure you want to delete this board and all tasks associated with it? This action cannot be undone.",
+        content: `Are you sure you want to delete the "${name}" board and all tasks associated with it? This action cannot be undone.`,
         confirmationButtonLabel: "Delete",
         confirmationKey: "deleteBoard",
         deleteItemId: id,
@@ -73,6 +73,7 @@ export const BoardItem = ({ id, name, totalNumberOfTasks, dateOfCreation }: Boar
       >
         <MoreHorizIcon />
       </IconButton>
+
       <ActionMenu
         open={moreMenuOpen}
         id={moreMenuId}
@@ -113,7 +114,7 @@ export const BoardItem = ({ id, name, totalNumberOfTasks, dateOfCreation }: Boar
             justifyContent: "space-between",
           }}
         >
-          <Typography component="h3" variant="h5">
+          <Typography component="h3" variant="h5" noWrap paddingInlineEnd={2}>
             {name}
           </Typography>
 

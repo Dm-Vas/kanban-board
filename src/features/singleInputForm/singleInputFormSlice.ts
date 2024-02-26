@@ -1,33 +1,36 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { RootState } from "src/store";
+import type { RootState } from "src/store";
 
 type SingleInputFormState = {
   isOpen: boolean;
-  type: "rename-board" | "add-column" | "rename-column" | null;
-  entityId: string | undefined;
-  oldName?: string;
+  type: "create-board" | "rename-board" | "add-column" | "rename-column" | null;
+  entityId?: string | null;
+  oldName?: string | null;
 };
 
 const initialState: SingleInputFormState = {
   isOpen: false,
   type: null,
-  entityId: undefined,
-  oldName: undefined,
+  entityId: null,
+  oldName: null,
 };
 
 const singleInputFormSlice = createSlice({
   name: "singleInputForm",
   initialState,
   reducers: {
-    openSingleInputForm: (state, action: PayloadAction<Omit<SingleInputFormState, "isOpen">>) => {
+    openSingleInputForm: (state, { payload }: PayloadAction<Omit<SingleInputFormState, "isOpen">>) => {
       state.isOpen = true;
-      state.type = action.payload.type;
-      state.entityId = action.payload.entityId;
-      state.oldName = action.payload.oldName;
+      state.type = payload.type;
+      state.entityId = payload.entityId;
+      state.oldName = payload.oldName;
     },
     closeSingleInputForm: (state) => {
       state.isOpen = false;
+      state.type = null;
+      state.entityId = null;
+      state.oldName = null;
     },
   },
 });

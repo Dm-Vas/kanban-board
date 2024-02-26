@@ -1,4 +1,6 @@
 export const apiTags = {
+  users: "users",
   boards: "boards",
-  boardDetails: "BoardDetails",
+  userDetails: "userDetails",
+  boardDetails: "boardDetails",
 };

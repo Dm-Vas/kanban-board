@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AlertProps } from "@mui/material";
+import type { AlertProps } from "@mui/material";
 
-import { RootState } from "src/store";
+import type { RootState } from "src/store";
 
 export type AlertState = Pick<AlertProps, "severity"> & {
   shown: boolean;

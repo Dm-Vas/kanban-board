@@ -1,14 +1,15 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AuthResponse } from "src/api/authApi";
-import { RootState } from "src/store";
 import Cookies from "universal-cookie";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+import type { AuthResponse } from "src/api/models/auth";
+import type { RootState } from "src/store";
 
 type AuthState = {
   id: string | null;
-  userName: string | null;
+  jwt: string | null;
   email: string | null;
   roles: string[] | null;
-  jwt: string | null;
+  userName: string | null;
 };
 
 const localStorageJson = localStorage.getItem("user");

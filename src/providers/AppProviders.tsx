@@ -4,8 +4,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 
 import { Root } from "src/Root";
 import { useAppSelector } from "src/store";
-import { selectThemeMode } from "src/features/themeMode/themeModeSlice";
 import { Alert } from "src/components/Alert/Alert";
+import { selectThemeMode } from "src/features/themeMode/themeModeSlice";
 
 const router = createBrowserRouter(createRoutesFromElements(Root));
 

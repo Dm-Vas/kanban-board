@@ -1,40 +1,32 @@
 import { useState, MouseEvent, useId } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  AppBar as MuiAppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  Box,
-  Container,
-  Avatar,
-  Stack,
-} from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import SettingsIcon from "@mui/icons-material/Settings";
-import LogoutIcon from "@mui/icons-material/Logout";
-
-import { useAppDispatch } from "src/store";
-
-import { AppBarProps } from "./AppBar.types";
-import { logout } from "src/features/auth/authSlice";
-import { showAlert } from "src/features/alert/alertSlice";
-import { ActionMenu } from "../ActionMenu/ActionMenu";
-import { useGetBoardDetailsQuery } from "src/api/boardApi";
 import { skipToken } from "@reduxjs/toolkit/dist/query";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { AppBar as MuiAppBar, Toolbar, IconButton, Typography, Container, Avatar, Stack } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
 
-export const AppBar = ({ drawerWidth }: AppBarProps) => {
+import { ActionMenu } from "src/components/ActionMenu/ActionMenu";
+import { logout, selectAuth } from "src/features/auth/authSlice";
+import { getUserInitials } from "src/utils/getUserInitials";
+import { useAppDispatch, useAppSelector } from "src/store";
+import { useGetBoardDetailsQuery } from "src/api/boardApi";
+import { showAlert } from "src/features/alert/alertSlice";
+import { useGetUserDetailsQuery } from "src/api/userApi";
+
+import type { AppBarProps } from "./AppBar.types";
+
+export const AppBar = ({ drawerWidth, onToggleDrawer }: AppBarProps) => {
   const params = useParams();
-  const { data: boardDetails } = useGetBoardDetailsQuery(params.boardId ?? skipToken);
-  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLButtonElement>(null);
   const userMenuId = useId();
-  const moreMenuButtonId = useId();
   const location = useLocation();
   const navigate = useNavigate();
+  const moreMenuButtonId = useId();
   const dispatch = useAppDispatch();
+  const { id } = useAppSelector(selectAuth);
+  const { data: userDetails } = useGetUserDetailsQuery(id || skipToken);
+  const { data: boardDetails } = useGetBoardDetailsQuery(params.boardId ?? skipToken);
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLButtonElement>(null);
 
   const userMenuOpen = Boolean(userMenuAnchorEl);
   const showExtraContent = location.pathname !== "/dashboard/boards" && location.pathname !== "/dashboard/settings";
@@ -73,34 +65,47 @@ export const AppBar = ({ drawerWidth }: AppBarProps) => {
     >
       <Container>
         <Toolbar disableGutters>
-          {showExtraContent && (
-            <Stack direction="row" alignItems="center" gap={5}>
-              <IconButton onClick={() => navigate(-1)}>
-                <ArrowBackIcon />
-              </IconButton>
+          <Stack direction="row" alignItems="center" gap={3}>
+            <IconButton
+              aria-label="Open drawer"
+              onClick={onToggleDrawer}
+              sx={{
+                display: {
+                  sm: "none",
+                },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-              <Typography variant="h6">{boardDetails?.name}</Typography>
-            </Stack>
-          )}
+            {showExtraContent && (
+              <Stack direction="row" alignItems="center" gap={1}>
+                <IconButton onClick={() => navigate(-1)}>
+                  <ArrowBackIcon />
+                </IconButton>
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              marginLeft: "auto",
-            }}
-          >
+                <Typography variant="h6">{boardDetails?.name}</Typography>
+              </Stack>
+            )}
+          </Stack>
+
+          {userDetails && (
             <IconButton
               id={moreMenuButtonId}
               aria-controls={userMenuOpen ? userMenuId : undefined}
               aria-haspopup="true"
               aria-expanded={userMenuOpen ? "true" : undefined}
               onClick={handleOpenUserMenu}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                marginLeft: "auto",
+                gap: 2,
+              }}
             >
-              <Avatar alt="User Avatar" src="" />
+              <Avatar alt="User Avatar">{getUserInitials(userDetails)}</Avatar>
             </IconButton>
-          </Box>
+          )}
 
           <ActionMenu
             id={userMenuId}
@@ -109,11 +114,6 @@ export const AppBar = ({ drawerWidth }: AppBarProps) => {
             aria-labelledby={moreMenuButtonId}
             onClose={handleCloseUserMenu}
             menuItems={[
-              {
-                icon: <SettingsIcon />,
-                label: "Settings",
-                onClick: () => navigate("/dashboard/settings"),
-              },
               {
                 icon: <LogoutIcon />,
                 label: "Log Out",
